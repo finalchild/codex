@@ -16,9 +16,9 @@ use windows_sys::Win32::System::LibraryLoader::SizeofResource;
 use windows_sys::Win32::UI::WindowsAndMessaging::CREATEPROCESS_MANIFEST_RESOURCE_ID;
 use windows_sys::Win32::UI::WindowsAndMessaging::RT_MANIFEST;
 
-/// The setup executable must expose an asInvoker manifest through the Windows resource API.
+/// The setup executable must expose its required manifest settings through the Windows resource API.
 #[test]
-fn setup_helper_embeds_as_invoker_manifest() -> Result<()> {
+fn setup_helper_embeds_required_manifest_settings() -> Result<()> {
     let setup_executable = std::env::var_os("CARGO_BIN_EXE_codex-windows-sandbox-setup")
         .or_else(|| std::env::var_os("CARGO_BIN_EXE_codex_windows_sandbox_setup"))
         .map(PathBuf::from)
@@ -73,6 +73,16 @@ fn setup_helper_embeds_as_invoker_manifest() -> Result<()> {
     assert!(
         manifest.contains("uiAccess=\"false\""),
         "setup helper manifest does not disable UI access: {manifest}",
+    );
+    assert!(
+        manifest.contains(
+            "windowsSettings xmlns:ws2=\"http://schemas.microsoft.com/SMI/2016/WindowsSettings\""
+        ),
+        "setup helper manifest does not declare the long-path settings namespace: {manifest}",
+    );
+    assert!(
+        manifest.contains("<ws2:longPathAware>true</ws2:longPathAware>"),
+        "setup helper manifest does not enable long-path awareness: {manifest}",
     );
 
     if unsafe { FreeLibrary(module) } == 0 {
